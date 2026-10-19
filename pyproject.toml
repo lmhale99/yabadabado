@@ -1,0 +1,57 @@
+[project]
+name = "yabadabado"
+version = "0.0.0"
+description = "Yay, a Base Database to Do calculations!"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    'yabadaba',
+]
+authors = [
+  {name = "Lucas Hale", email = "lucas.hale@nist.gov"}
+]
+license = "NIST-Software"
+keywords = [
+    'database', 
+    'calculation management', 
+    'workflow',
+]
+classifiers = [
+    'Development Status :: 4 - Beta',
+    'Intended Audience :: Science/Research',
+    'Natural Language :: English',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
+    'Topic :: Scientific/Engineering :: Physics'
+]
+
+[project.urls]
+Homepage = "https://github.com/usnistgov/yabadabado/"
+Documentation = "https://github.com/usnistgov/yabadabado/"
+Repository = "https://github.com/usnistgov/yabadabado/.git"
+
+[tool.uv.sources]
+DataModelDict = { path = "../DataModelDict", editable = true }
+cdcs = { path = "../pycdcs", editable = true }
+yabadaba = { path = "../yabadaba", editable = true }
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "pytest>=7.4.4",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.26,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "yabadabado"
+module-root = ""
