@@ -1,4 +1,4 @@
-from typing import Optional, Union, Any, Literal
+from typing import Any, Literal
 
 # Import parent record styles
 from . import InputValue
@@ -15,22 +15,22 @@ class InputFloatValue(InputValue, FloatValue):
     def __init__(self,
                  name: str,
                  record,
-                 defaultvalue: Optional[Any] = None,
+                 defaultvalue: Any | None = None,
                  valuerequired: bool = True,
-                 allowedvalues: Optional[tuple] = None,
+                 allowedvalues: tuple | None = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, Literal[False], None] = None,
-                 metadataparent: Optional[str] = None,
-                 modelpath: Union[str, Literal[False], None] = None,
-                 description: Optional[str] = None,
+                 metadatakey: str | Literal[False] | None = None,
+                 metadataparent: str | None = None,
+                 modelpath: str | Literal[False] | None = None,
+                 description: str | None = None,
                  loadorder: int = 9999999,
-                 calcname: Union[str, bool, None] = None,
-                 templatekey: Optional[str] = None,
+                 calcname: str | bool | None = None,
+                 templatekey: str | None = None,
                  templatedoc: str = '',
                  is_compare_term: bool = False,
-                 compare_fterm_tol: Optional[float] = None,
-                 unit: Optional[str] = None,
-                 defaultunit: Optional[str] = None):
+                 compare_fterm_tol: float | None = None,
+                 unit: str | None = None,
+                 defaultunit: str | None = None):
         """
         Initialize an InputFloatValue object for calculation inputs.
         
@@ -124,17 +124,11 @@ class InputFloatValue(InputValue, FloatValue):
 
 
     @property
-    def defaultunit(self) -> Optional[str]:
+    def defaultunit(self) -> str | None:
         """str or None: The default units to use"""
         return self.__defaultunit
-    
-    #@property
-    #def style(self):
-    #    """str: The value style"""
-    #    return 'input_float'
 
-
-    def load_parameters_value(self, val):
+    def load_parameters_value(self, val: Any) -> Any:
         """
         Function to modify values when reading them in from an input parameter
         file.

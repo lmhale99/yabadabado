@@ -1,6 +1,7 @@
-from typing import Any, Optional, Union, Literal
+from typing import Any, Literal
 
 from yabadaba.value import Value
+from yabadaba.record import Record
 
 __all__ = ['ResultValue']
 
@@ -9,16 +10,16 @@ class ResultValue(Value):
 
     def __init__(self,
                  name: str,
-                 record,
-                 defaultvalue: Optional[Any] = None,
+                 record: Record,
+                 defaultvalue: Any | None = None,
                  valuerequired: bool = False,
-                 allowedvalues: Optional[tuple] = None,
+                 allowedvalues: tuple | None = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, Literal[False], None] = None,
-                 metadataparent: Optional[str] = None,
-                 modelpath: Union[str, Literal[False], None] = None,
-                 description: Optional[str] = None,
-                 calcname: Union[str, bool, None] = None,
+                 metadatakey: str | Literal[False] | None = None,
+                 metadataparent: str | None = None,
+                 modelpath: str | Literal[False] | None = None,
+                 description: str | None = None,
+                 calcname: str | Literal[False] | None = None,
                  **kwargs):
         """
         Initialize a ResultValue object for calculation results.
@@ -84,7 +85,7 @@ class ResultValue(Value):
         self.__calcname =  calcname
 
     @property
-    def calcname(self) -> Union[str, bool]:
+    def calcname(self) -> str | bool:
         """str or bool: The calculation function parameter name to use"""
         return self.__calcname
     
