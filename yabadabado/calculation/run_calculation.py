@@ -7,8 +7,8 @@ from yabadaba.tools import is_uuid
 from . import Calculation, load_calculation
 
 def run_calculation(params: Union[str, dict, IOBase, None] = None,
-                    calc_style: Optional[str] = None,
-                    calc_key: Optional[str] = None,
+                    calc_style: str | None = None,
+                    calc_key: str | None = None,
                     raise_error: bool = False,
                     verbose: bool = True):
     """

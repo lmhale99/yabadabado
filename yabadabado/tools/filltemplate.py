@@ -1,8 +1,7 @@
 # Standard Python imports
-from typing import Union
 import io
 
-def filltemplate(template: Union[str, io.IOBase],
+def filltemplate(template: str | io.IOBase,
                  variable: dict,
                  s_delimiter: str,
                  e_delimiter: str) -> str:

@@ -1,6 +1,6 @@
 # Standard Python libraries
 from pathlib import Path
-from typing import Union, Optional, List
+from typing import List
 import io
 
 
@@ -11,8 +11,8 @@ from yabadaba.tools import aslist
 
 __all__ = ['parse']
 
-def parse(inscript: Union[str, Path, io.IOBase],
-          singularkeys: Optional[List[str]] = None,
+def parse(inscript: str | Path | io.IOBase,
+          singularkeys: List[str] | None = None,
           allsingular: bool = False) -> dict:
     """
     Parses an input file and returns a dictionary of parameter terms.
@@ -66,11 +66,8 @@ def parse(inscript: Union[str, Path, io.IOBase],
     with uber_open_rmode(inscript) as infile:
         
         # Iterate over all lines in infile
-        for line in infile:
-            try:
-                line = line.decode('utf-8')
-            except:
-                pass
+        for bline in infile:
+            line = bline.decode('utf-8')
             terms = line.split()
             
             # Remove comments
