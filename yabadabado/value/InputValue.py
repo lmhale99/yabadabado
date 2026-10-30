@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union, Literal
+from typing import Any, Literal
 
 from yabadaba.value import Value
 
@@ -10,20 +10,20 @@ class InputValue(Value):
     def __init__(self,
                  name: str,
                  record,
-                 defaultvalue: Optional[Any] = None,
+                 defaultvalue: Any | None = None,
                  valuerequired: bool = True,
-                 allowedvalues: Optional[tuple] = None,
+                 allowedvalues: tuple | None = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, Literal[False], None] = None,
-                 metadataparent: Optional[str] = None,
-                 modelpath: Union[str, Literal[False], None] = None,
-                 description: Optional[str] = None,
+                 metadatakey: str | Literal[False] | None = None,
+                 metadataparent: str | None = None,
+                 modelpath: str | Literal[False] | None = None,
+                 description: str | None = None,
                  loadorder: int = 9999999,
-                 calcname: Union[str, bool, None] = None,
-                 templatekey: Optional[str] = None,
-                 templatedoc: str = '',
+                 calcname: str | bool | None = None,
+                 templatekey: str | None = None,
+                 templatedoc: str | None = None,
                  is_compare_term: bool = False,
-                 compare_fterm_tol: Optional[float] = None,
+                 compare_fterm_tol: float | None = None,
                  **kwargs):
         """
         Initialize an InputValue object for calculation inputs.
@@ -69,13 +69,18 @@ class InputValue(Value):
             that corresponds to this value.  If set to None
             (default) then name will be used for calcname.
         templatekey: str or None, optional
-            The name of the input file/template key that corresponds to this
-            value.  If set to None (default) then name will be used for
-            templatekey.
-        templatedoc: str, optional
-            The description of the template parameter to include in the
-            calculation's templatedoc documentation.  Default value is '',
-            i.e. no information.
+            The base name for any input file parameters associated with the
+            value. If the value has a single input parameter, then this is the
+            name of that parameter. Otherwise, this is the prefix to use for
+            all associated input parameters.  If set to None (default) then
+            name will be used for templatekey.
+        templatedoc: str or None, optional
+            If the value has a single input parameter, then this is its
+            description include in the calculation's templatedoc documentation.
+            If set to None (default) then the value's description will be used.
+            For values with multiple input parameters this is ignored and
+            the descriptions must be defined when the class overrides the
+            templatedoc() attribute.
         is_compare_term: bool, optional
             Indicates if the corresponding metadata value is included in
             the compare_terms list for direct comparison of values for
@@ -128,11 +133,11 @@ class InputValue(Value):
         self.__is_compare_term = bool(is_compare_term)
         self.__compare_fterm_tol = compare_fterm_tol
         self.__calcname =  calcname
-        self.__templatekey =  templatekey
-        self.__templatedoc =  templatedoc
+        self.__templatekey = templatekey
+        self.__templatedoc = templatedoc
         self.__loadorder = loadorder
     
-    def load_parameters_value(self, val):
+    def load_parameters_value(self, val: Any) -> Any:
         """
         Function to modify values when reading them in from an input parameter
         file.
@@ -144,15 +149,14 @@ class InputValue(Value):
         Reads in the templatekey value from the input parameter file and
         saves it to the class attribute value.
         """
-        if self.templatekey is None:
-            return None
+        if len(self.templatekeys) == 1:
         
-        if self.defaultvalue is None:
-            val = input_dict[self.templatekey]
-        else:
-            val = input_dict.get(self.templatekey, self.defaultvalue)
-        
-        self.value = self.load_parameters_value(val)
+            if self.valuerequired is True and self.defaultvalue is None:
+                val = input_dict[self.templatekeys[0]]
+            else:
+                val = input_dict.get(self.templatekeys[0], self.defaultvalue)
+            
+            self.value = self.load_parameters_value(val)
 
     @property
     def is_compare_term(self) -> bool:
@@ -160,24 +164,70 @@ class InputValue(Value):
         return self.__is_compare_term
     
     @property
-    def compare_fterm_tol(self) -> Optional[float]:
+    def compare_fterm_tol(self) -> float | None:
         """float or None: tolerance to use for the value in compare_fterms"""
         return self.__compare_fterm_tol
     
     @property
-    def calcname(self) -> Union[str, bool]:
+    def calcname(self) -> str | bool:
         """str or bool: The calculation function parameter name to use"""
         return self.__calcname
     
     @property
-    def templatekey(self) -> str:
-        """str: the name to use for the parameter in the input file template"""
-        return self.__templatekey
-    
+    def templatekeys(self) -> list[str]:
+        """
+        list : The input parameter keys found in the text input parameter file
+        associated with the value. Any keys listed here will be included in the
+        generated template and templatedoc content. These keys must have simple
+        string value representations.
+        """
+        # Single input parameter example
+        return [self.__templatekey]
+
+        # Multiple input parameter example:
+        #return [
+        #    f'{self.__templatekey}term1',
+        #    f'{self.__templatekey}term2',
+        #    ...
+        #]
+
     @property
     def templatedoc(self) -> str:
         """str: The parameter description to use in templatedoc"""
-        return self.__templatedoc
+        # Single input parameter example
+        return f'- __{self.__templatekey}__: {self.__templatedoc}'
+
+        # # Multiple input parameter example:
+        #return '\n'.join([
+        #    f'- __{self.__templatekey}term1__: Description of input term1',
+        #    f'- __{self.__templatekey}term2__: Description of input term2',
+        #    ...
+        #])
+
+    @property
+    def preparekeys(self) -> list[str]:
+        """
+        list : All input parameter keys in the input_dict passed to
+        load_parameters() that are associated with this value and used during
+        prepare. This should be all templatekeys plus extra fields where
+        pre-loaded content can be directly given. Typically, the extra terms are
+        named "_content" and contain file contents so prepare can check input
+        validity and uniqueness prior to copying the files to a calculation
+        folder.
+        """
+        return list(self.templatekeys) + [
+            #f'{self.__templatekey}_content' # Example
+        ]
+
+    @property
+    def interpretkeys(self) -> list[str]:
+        """
+        list : All keys in load_parameter's input_dict that the value interacts
+        with. This should be preparekeys plus any extra keys that are modified
+        or created that can then be subsequently used by other values
+        """
+        return self.preparekeys + [
+        ]
     
     @property
     def loadorder(self) -> int:
