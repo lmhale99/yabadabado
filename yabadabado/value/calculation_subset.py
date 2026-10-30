@@ -1,4 +1,4 @@
-from typing import Optional, Union, Any, Literal
+from typing import Any, Literal
 
 from yabadaba.record import Record
 
@@ -12,17 +12,17 @@ class CalculationSubsetValue(RecordSubsetValue):
     
     def __init__(self,
                  name: str,
-                 record,
-                 recordclass: Union[str, type[Record]],
-                 defaultvalue: Optional[Any] = None,
+                 record: Record,
+                 recordclass: str | type[Record],
+                 defaultvalue: Any | None = None,
                  valuerequired: bool = False,
-                 allowedvalues: Optional[tuple] = None,
+                 allowedvalues: tuple | None = None,
                  allowcustomvalue: bool = False,
-                 metadatakey: Union[str, Literal[False], None] = None,
-                 metadataparent: Optional[str] = None,
+                 metadatakey: str | Literal[False] | None = None,
+                 metadataparent: str | None = None,
                  metadataprefix: str = '',
-                 modelpath: Union[str, Literal[False], None] = None,
-                 description: Optional[str] = None,
+                 modelpath: str | Literal[False] | None = None,
+                 description: str | None = None,
                  loadorder: int = 9999999,
                  **kwargs):
         """
@@ -101,3 +101,24 @@ class CalculationSubsetValue(RecordSubsetValue):
     def loadorder(self) -> int:
         """int: Specifies the load_parameter sorting order for the value"""
         return self.__loadorder
+
+    @property
+    def templatekeys(self) -> list:
+        """list : The calculation-specific input keys."""
+        return self.value.templatekeys
+
+    @property
+    def preparekeys(self) -> list:
+        """list : The calculation-specific input keys."""
+        return self.value.preparekeys
+
+    @property
+    def interpretkeys(self) -> list:
+        """list : The calculation-specific input keys."""
+        return self.value.interpretkeys
+
+    def calc_inputs(self, kwargs: dict):
+        """
+        Adds values to the kwargs dict for the calculation function
+        """
+        kwargs.update(self.value.calc_inputs())

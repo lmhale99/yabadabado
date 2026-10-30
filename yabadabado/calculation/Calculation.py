@@ -25,7 +25,7 @@ class Calculation(Record):
 
     def __init__(self,
                  model: Union[str, IOBase, DM, None] = None,
-                 name: Optional[str] = None,
+                 name: str | None = None,
                  params: Union[str, Path, IOBase, dict, None] = None,
                  database = None,
                  noname: bool = False,
@@ -74,7 +74,7 @@ class Calculation(Record):
             self.load_parameters(params, key=kwargs.get('key', None))
 
     @property
-    def defaultname(self) -> Optional[str]:
+    def defaultname(self) -> str | None:
         """str: The name to default to: key"""
         return self.key
 
@@ -154,10 +154,6 @@ class Calculation(Record):
                         modelpath = 'URL',
                         description = 'A URL where the calculation record can be found')
 
-        self._add_value('str', 'yabadaba_version',
-                        defaultvalue = yabadaba.__version__,
-                        description = 'The version of yabadaba used')
-
         self._add_value('input_str', 'branch',
                         modelpath = 'calculation.branch',
                         defaultvalue = 'main',
@@ -198,7 +194,7 @@ class Calculation(Record):
 
     def load_parameters(self,
                         params: Union[str, Path, IOBase, dict],
-                        key: Optional[str] = None):
+                        key: str | None = None):
         """
         Reads in and sets calculation parameters.
 
@@ -235,13 +231,85 @@ class Calculation(Record):
             self.name = self.key
 
     @property
-    def templatekeys(self) -> dict:
-        """dict : The calculation-specific input keys and their descriptions."""
-        templatedict = {}
-        for input_object in self.iter_input_objects():
-            templatedict[input_object.templatekey] = input_object.templatedoc
+    def templatekeys(self) -> list:
+        """list : The calculation-specific input keys."""
+        templatekeys = []
 
-        return templatedict
+        # Build common content
+        for input_object in self.iter_input_objects():
+            name = input_object.name       
+            # Skip calc-specific values until below
+            if name not in self.__base_names:
+                continue
+            templatekeys.extend(input_object.templatekeys)
+        
+        # Build subset content
+        for input_object in self.iter_calcsubset_objects():
+            templatekeys.extend(input_object.templatekeys)
+        
+        # Build calculation-specific content
+        for input_object in self.iter_input_objects():
+            name = input_object.name       
+            # Skip calc-specific values until below
+            if name in self.__base_names:
+                continue
+            templatekeys.extend(input_object.templatekeys)
+
+        return templatekeys
+
+    @property
+    def preparekeys(self) -> list:
+        """list : The calculation-specific input keys."""
+        preparekeys = []
+
+        # Build common content
+        for input_object in self.iter_input_objects():
+            name = input_object.name       
+            # Skip calc-specific values until below
+            if name not in self.__base_names:
+                continue
+            preparekeys.extend(input_object.preparekeys)
+        
+        # Build subset content
+        for input_object in self.iter_calcsubset_objects():
+            preparekeys.extend(input_object.preparekeys)
+        
+        # Build calculation-specific content
+        for input_object in self.iter_input_objects():
+            name = input_object.name       
+            # Skip calc-specific values until below
+            if name in self.__base_names:
+                continue
+            preparekeys.extend(input_object.preparekeys)
+
+        return preparekeys
+
+    @property
+    def interpretkeys(self) -> list:
+        """list : The calculation-specific input keys."""
+        interpretkeys = []
+        
+        # Build common content
+        for input_object in self.iter_input_objects():
+            name = input_object.name       
+            # Skip calc-specific values until below
+            if name not in self.__base_names:
+                continue
+            interpretkeys.extend(input_object.interpretkeys)
+        
+        # Build subset content
+        for input_object in self.iter_calcsubset_objects():
+            interpretkeys.extend(input_object.interpretkeys)
+        
+        # Build calculation-specific content
+        for input_object in self.iter_input_objects():
+            name = input_object.name       
+            # Skip calc-specific values until below
+            if name in self.__base_names:
+                continue
+            interpretkeys.extend(input_object.interpretkeys)
+
+        return interpretkeys
 
     @property
     def template(self) -> str:
@@ -258,12 +326,13 @@ class Calculation(Record):
             if name not in self.__base_names:
                 continue
 
-            # Build template line
-            spacelen = 32 - len(name)
-            if spacelen < 1:
-                spacelen = 1
-            space = ' ' * spacelen
-            lines.append(f'{name}{space}<{name}>')
+            for templatekey in input_object.templatekeys:
+                # Build template line
+                spacelen = 32 - len(templatekey)
+                if spacelen < 1:
+                    spacelen = 1
+                space = ' ' * spacelen
+                lines.append(f'{templatekey}{space}<{templatekey}>')
         lines.append('')
 
         # Build subset content
@@ -284,12 +353,13 @@ class Calculation(Record):
                 lines += ['# Run Parameters']
                 first = False
 
-            # Build template line
-            spacelen = 32 - len(name)
-            if spacelen < 1:
-                spacelen = 1
-            space = ' ' * spacelen
-            lines.append(f'{name}{space}<{name}>')
+            for templatekey in input_object.templatekeys:
+                # Build template line
+                spacelen = 32 - len(templatekey)
+                if spacelen < 1:
+                    spacelen = 1
+                space = ' ' * spacelen
+                lines.append(f'{templatekey}{space}<{templatekey}>')
 
         # Join and return lines
         return '\n'.join(lines)      
@@ -310,8 +380,7 @@ class Calculation(Record):
                 continue
 
             # Build template line
-            doc = input_object.description
-            lines.append(f'- __{name}__: {doc}')
+            lines.append(input_object.templatedoc)
         lines.append('')
 
         # Build subset content
@@ -333,8 +402,7 @@ class Calculation(Record):
                 first = False
 
             # Build template line
-            doc = input_object.description
-            lines.append(f'- __{name}__: {doc}')
+            lines.append(input_object.templatedoc)
 
         # Join and return lines
         return '\n'.join(lines)
@@ -439,6 +507,8 @@ class Calculation(Record):
         """Builds calculation inputs from the class's attributes"""
         inputs = {}
         for input_object in self.iter_input_objects():
+            input_object.calc_inputs(inputs)
+        for input_object in self.iter_calcsubset_objects():
             input_object.calc_inputs(inputs)
 
         return inputs

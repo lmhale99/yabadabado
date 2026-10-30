@@ -25,7 +25,7 @@ class CalculationSubset(Record):
 
     def __init__(self,
                  model: Union[str, IOBase, DM, None] = None,
-                 name: Optional[str] = None,
+                 name: str | None = None,
                  database = None,
                  noname: bool = True,
                  extensible: Optional[bool] = None,
@@ -63,14 +63,16 @@ class CalculationSubset(Record):
                          noname=noname, extensible=extensible, **kwargs)
 
     @property
-    def modelroot(self) -> str:
-        """str: The model root for the calculation subset"""
-        return 'units'
-
-    @property
-    def style(self) -> str:
-        """str: The record style for the calculation subset"""
-        return 'units'
+    def style(self):
+        """The subset's style"""
+        # Set default based on (grand)parent module's name
+        modulepath = self.__module__.split('.')
+        if self.__class__.__name__ != modulepath[-1]:
+            # Return parent if different than class name
+            return modulepath[-1]
+        else:
+            # Return grand parent if parent is class name
+            return modulepath[-2]
 
 ############################### Value handling ##############################
 
@@ -125,7 +127,34 @@ class CalculationSubset(Record):
 
     @property
     def template_header(self) -> str:
-        return '# Input/Output Units'
+        return '# Subset'
+
+    @property
+    def templatekeys(self) -> list:
+        """list : The calculation-specific input keys."""
+        templatekeys = []
+        for input_object in self.iter_input_objects():
+            templatekeys.extend(input_object.templatekeys)
+
+        return templatekeys
+
+    @property
+    def preparekeys(self) -> list:
+        """list : The calculation-specific input keys."""
+        preparekeys = []
+        for input_object in self.iter_input_objects():
+            preparekeys.extend(input_object.preparekeys)
+
+        return preparekeys
+
+    @property
+    def interpretkeys(self) -> list:
+        """list : The calculation-specific input keys."""
+        interpretkeys = []
+        for input_object in self.iter_input_objects():
+            interpretkeys.extend(input_object.interpretkeys)
+
+        return interpretkeys
 
     @property
     def template(self) -> str:
@@ -134,19 +163,18 @@ class CalculationSubset(Record):
         # Build subset content
         lines = []
         i = -1
-        for i, input_object in enumerate(self.iter_input_objects()):
+        for i, templatekey in enumerate(self.templatekeys):
             
             if i == 0:
                 # Add header before first value
                 lines.append(self.template_header)
             
             # Build template line
-            name = input_object.name
-            spacelen = 32 - len(name)
+            spacelen = 32 - len(templatekey)
             if spacelen < 1:
                 spacelen = 1
             space = ' ' * spacelen
-            lines.append(f'{name}{space}<{name}>')
+            lines.append(f'{templatekey}{space}<{templatekey}>')
         
         if i >= 0:
             # Add extra newline if parameters were added
@@ -173,9 +201,7 @@ class CalculationSubset(Record):
                 lines.append('#' + self.template_header)
             
             # Build template line
-            name = input_object.name
-            doc = input_object.description
-            lines.append(f'- __{name}__: {doc}')
+            lines.append(input_object.templatedoc)
         
         if i >= 0:
             # Add extra newline if parameters were added
